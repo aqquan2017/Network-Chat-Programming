@@ -10,3 +10,12 @@
 # It take 1 month in weekend ! You can reference and use for learning purpose !!!
 
 # Star it if this useful ! Tks
+
+# Prefix convention
+/c/ Connection
+/k/ Kicking
+/m/ Messenge
+/o/ User Online
+/r/ Raw debugging
+/d/ Disconnect
+/t/ Timeout

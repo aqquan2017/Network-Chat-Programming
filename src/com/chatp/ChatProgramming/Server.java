@@ -6,6 +6,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Server implements Runnable{
 
@@ -15,10 +16,14 @@ public class Server implements Runnable{
 	private int port;
 	private boolean running = false;
 	
+	//Packet send and receive in console - debug
+	private boolean raw;
+	
 	private DatagramSocket socket;
 	private Thread run , receive, send, manage;
 	
 	public Server(int port) {
+		raw = false;
 		this.port = port;
 		System.out.println("Server running in "+port);
 		try {
@@ -36,6 +41,12 @@ public class Server implements Runnable{
 		running = true;
 		manage();
 		receive();
+		
+		while(running) {
+			Scanner cmd = new Scanner(System.in);
+			String s = cmd.nextLine();
+			serverCMD(s);			
+		}
 	}
 	
 	private void manage() {
@@ -63,6 +74,9 @@ public class Server implements Runnable{
 			if(c.attemp >= MAX_ATTEMP) {
 				disconnect(c.getID(), false);
 			}
+			else if(c.attemp > 1) {
+				System.out.println("Disconnect "+c.name + " with "+(MAX_ATTEMP-c.attemp) + " attemp left !");
+			}
 		}
 	}
 	
@@ -84,9 +98,25 @@ public class Server implements Runnable{
 			socket.receive(packet);
 			String string = new String(packet.getData());
 			
+			if(raw) {
+				System.out.println(string);
+			}
+			
+			
 			if(string.startsWith("/c/")) {
 				int ID = UniqueID.getIdentifier();
 				String name = string.split("/c/|/e/")[1];
+				
+				//checking identical name, return error if true
+				for(int i=0 ; i<ClientList.size() ; i++) {
+					if(name.equals(ClientList.get(i).name)) {
+						System.out.println("Client connected unsuccesful : Identical name : "+name);
+						String s = "/k/"+packet.getAddress();
+						sendMess(s, packet.getAddress(), packet.getPort());
+						return;
+					}
+				}
+				
 				ClientList.add(new ClientEntity(name, packet.getAddress(), packet.getPort(), ID));
 				System.out.println("Client " +name +" joined !!!");
 				String s = "/c/"+ID;
@@ -105,7 +135,6 @@ public class Server implements Runnable{
 			}
 			else if(string.startsWith("/t/")) {
 				String name = string.split("/t/|/e/")[1];
-				System.out.println("DA NHAN MANAGECLIENT "+name);
 				for(int i=0 ; i<ClientList.size() ; i++) {
 					ClientEntity c = ClientList.get(i);
 
@@ -138,10 +167,10 @@ public class Server implements Runnable{
 		
 		String s = "";
 		if(state) {
-			s = "Remove '"+ c.name+ "' with ("+c.ip +") out of the list due to closing application";
+			s = "Remove '"+ c.name+ "' with ("+c.ip +") due to closing application";
 		}
 		else {
-			s = "Remove "+ c.name +" with "+c.ip +" out of the list due to timeout ";
+			s = "Remove "+ c.name +" with ("+c.ip +") due to timeout ";
 		}
 		System.out.println(s);
 	}
@@ -153,6 +182,11 @@ public class Server implements Runnable{
 	}
 	
 	private void sendMess(String mess, InetAddress ip,int port) {
+		if(raw) {
+			System.out.println(mess);
+		}
+		
+		
 		mess += "/e/";
 		sendMess(mess.getBytes(), ip, port);
 	}
@@ -169,6 +203,64 @@ public class Server implements Runnable{
 			}
 		};
 		send.start();
+	}
+	
+	private void serverCMD(String s) {
+		//All current user Online
+		if(s.startsWith("/o/")) {
+			if(ClientList.size() == 0) {
+				System.out.println("NO CLIENT !!!!");
+				return;
+			}
+			for(int i=0 ; i<ClientList.size() ; i++) {
+				ClientEntity c = ClientList.get(i);
+				System.out.println("==================");
+				System.out.println(c.name + ":ID: "+c.getID()+" with ("+c.ip+")");
+			}
+		}
+		
+		//Switch raw - console packet deliver state
+		//btw console optimize not done yet, u can simply modify to debug
+		else if(s.startsWith("/r/")) {
+			raw = !raw;
+			System.out.println("Raw mode is :" + (raw ? "ON" : "OFF"));
+ 		}
+		
+		//Notice all client
+		else if(s.startsWith("/m/")) {
+			String notice ="/m/Server : "+ s.substring(3,s.length());
+			sendtoAll(notice);
+		}
+		
+		//Kicking client
+		else if(s.startsWith("/k/")) {
+			int id = 0;
+			try {
+				id = Integer.parseInt(s.substring(3,s.length()));
+			}
+			catch(NumberFormatException e) {
+				System.out.println("Wrong CMD");
+				return;
+			}
+			for(int i=0 ; i<ClientList.size() ; i++) {
+				ClientEntity c = ClientList.get(i);
+				if(c.getID() == id) {
+					sendMess("/k/", c.ip, c.port);				
+					disconnect(id, true);
+					System.out.println("Disconnected :"+id);
+					break;
+				}
+			}
+		}
+		//Guide
+		else {
+			System.out.println("=====================");
+			System.out.println("NONSENSE CMD : GUIDE");
+			System.out.println("/o/ : Online current user");
+			System.out.println("/r/ : Raw mode for debugging");
+			System.out.println("/k/+ID : Kick user base on ID");
+			System.out.println("/m/ Notice all client");
+		}
 	}
 	
 }

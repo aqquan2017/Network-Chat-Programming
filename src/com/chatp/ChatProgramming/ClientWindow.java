@@ -37,6 +37,8 @@ public class ClientWindow extends JFrame implements Runnable{
 	private Thread receive;
 	private boolean running;
 	
+	
+	
 	public ClientWindow(String name , String host , int port) {
 		this.userName = name;
 		setTitle("Chat");
@@ -70,6 +72,17 @@ public class ClientWindow extends JFrame implements Runnable{
 			}
 			else if(s.startsWith("/t/")) {
 				client.sendMessToServer("/t/"+this.userName);
+			}
+			else if(s.startsWith("/k/")) {
+				sendMessToScreen("Unavailable name or is kicked !Quit app in 3s..");
+				try {
+					Thread.sleep(3000);
+					System.exit(0);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
 			}
 		}
 		receive.start();
