@@ -22,9 +22,6 @@ import javax.swing.text.DefaultCaret;
 
 public class ClientWindow extends JFrame implements Runnable{
 
-	/**
-	 * 
-	 */
 	private final String userName ;
 	private static final long serialVersionUID = 1L;
 
@@ -93,13 +90,14 @@ public class ClientWindow extends JFrame implements Runnable{
 		setVisible(true);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);
-		setSize(550, 640);
+		setSize(450, 550);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		GridBagLayout gbl_contentPane = new GridBagLayout();
 		gbl_contentPane.columnWidths = new int[]{20 , 450 , 40 };
 		gbl_contentPane.rowHeights = new int[]{20 , 560 , 20 };
+		
 		gbl_contentPane.columnWeights = new double[]{0, 1.0};
 		gbl_contentPane.rowWeights = new double[]{ 0,Double.MIN_VALUE};
 		contentPane.setLayout(gbl_contentPane);
